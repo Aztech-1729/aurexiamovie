@@ -10,7 +10,7 @@ IMAGE_CACHE_EXPIRY_DAYS = 7
 MAX_RESULTS = 10
 
 # Tor proxy for DDG rate limit bypass (Tor Browser on Windows uses 9150)
-TOR_PROXY = "socks5://127.0.0.1:9150"
+TOR_PROXY = "socks5://127.0.0.1:9050"
 
 # MongoDB
 MONGO_URI = "mongodb+srv://aztech:ayazahmed1122@cluster0.mhuaw3q.mongodb.net/aurexiamovie_db?retryWrites=true&w=majority"
