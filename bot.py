@@ -987,66 +987,60 @@ async def fm_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             keyboard = build_results_keyboard(session["results"], session["page"])
             await query.edit_message_reply_markup(reply_markup=keyboard)
         return
-
-
 # ── Main ─────────────────────────────────────────────────────────────────────
 
-import threading
+import asyncio
 
-def run_file_manager_bot():
-    """Run the file manager bot in a separate thread"""
+
+async def run_file_manager_bot_async():
+    """Run the file manager bot asynchronously"""
     try:
         fm_app = ApplicationBuilder().token(FILE_MANAGER_BOT_TOKEN).build()
-        
-        # Add handlers for file manager bot
         fm_app.add_handler(CommandHandler("start", fm_start_command))
         fm_app.add_handler(CallbackQueryHandler(fm_callback_handler))
-        
+        await fm_app.initialize()
+        await fm_app.start()
+        await fm_app.updater.start_polling(allowed_updates=["message", "callback_query"])
         print("📁 File Manager Bot running...", flush=True)
-        fm_app.run_polling(allowed_updates=["message", "callback_query"])
     except Exception as e:
         print(f"[File Manager Bot Error] {e}", flush=True)
 
 
-def run_main_bot():
-    """Run the main movie search bot"""
+async def run_main_bot_async():
+    """Run the main movie search bot asynchronously"""
     try:
         app = ApplicationBuilder().token(BOT_TOKEN).build()
-        
-        # Message handler for movie search
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        
-        # Callback query handler
         app.add_handler(CallbackQueryHandler(handle_callback_query))
-        
-        # Chat member handler for welcome messages
         app.add_handler(ChatMemberHandler(handle_chat_member_update, ChatMemberHandler.CHAT_MEMBER))
-        
-        # Admin commands
         app.add_handler(CommandHandler("admin", admin_command))
         app.add_handler(CommandHandler("stats", stats_command))
         app.add_handler(CommandHandler("addlink", add_link_command))
         app.add_handler(CommandHandler("deletelink", delete_link_command))
         app.add_handler(CommandHandler("clearcache", clear_cache_command))
-        
+        await app.initialize()
+        await app.start()
+        await app.updater.start_polling(allowed_updates=["message", "callback_query", "chat_member", "my_chat_member"])
         print("🎬 Movie Search Bot running...", flush=True)
-        app.run_polling(allowed_updates=["message", "callback_query", "chat_member", "my_chat_member"])
     except Exception as e:
         print(f"[Main Bot Error] {e}", flush=True)
 
 
+async def main_async():
+    """Run both bots concurrently"""
+    await asyncio.gather(
+        run_file_manager_bot_async(),
+        run_main_bot_async(),
+    )
+    print("✅ Both bots started! Waiting...", flush=True)
+    # Keep running forever
+    while True:
+        await asyncio.sleep(3600)
+
+
 def main():
-    """Main entry point - run both bots in separate threads"""
     print("🚀 Starting bots...", flush=True)
-    
-    # Start file manager bot in a separate thread
-    fm_thread = threading.Thread(target=run_file_manager_bot, daemon=True)
-    fm_thread.start()
-    print("✅ File Manager Bot thread started", flush=True)
-    
-    # Run main bot in the main thread
-    print("🎯 Starting Main Bot...", flush=True)
-    run_main_bot()
+    asyncio.run(main_async())
 
 
 if __name__ == "__main__":
