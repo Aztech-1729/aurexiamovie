@@ -3,4 +3,4 @@ ddgs==9.4.1
 pymongo==4.13.0
 requests[socks]==2.32.3
 flask==3.0.3
-with-cloudflared==0.3.1
+with-cloudflared==0.1.0
