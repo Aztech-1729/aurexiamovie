@@ -5,6 +5,9 @@ import asyncio
 import threading
 import urllib.parse
 from datetime import datetime, timezone, timedelta
+# Use a valid Firefox user agent to avoid impersonation warning
+DEFAULT_USERAGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0"
+
 from ddgs import DDGS
 from pymongo import MongoClient
 from flask import Flask, render_template, request
@@ -93,7 +96,7 @@ def search_movie_image(query: str) -> str:
     for attempt in range(1, 3):
         try:
             print(f"[Image Search] Attempt {attempt}/2 for: {query}")
-            ddgs = DDGS(proxy=TOR_PROXY, timeout=15)
+            ddgs = DDGS(proxy=TOR_PROXY, timeout=15, useragent=DEFAULT_USERAGENT)
             
             # Search for movie poster
             image_results = ddgs.images(
@@ -401,7 +404,7 @@ def do_search(query: str) -> list:
     for attempt in range(1, 4):
         try:
             print(f"[Search] Attempt {attempt}/3 for: {query}")
-            ddgs = DDGS(proxy=TOR_PROXY, timeout=20)
+            ddgs = DDGS(proxy=TOR_PROXY, timeout=20, useragent=DEFAULT_USERAGENT)
 
             # Search on IMDb
             raw_results = ddgs.text(
