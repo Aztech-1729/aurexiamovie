@@ -5,9 +5,6 @@ import asyncio
 import threading
 import urllib.parse
 from datetime import datetime, timezone, timedelta
-# Use a valid Firefox user agent to avoid impersonation warning
-DEFAULT_USERAGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0"
-
 from ddgs import DDGS
 from pymongo import MongoClient
 from flask import Flask, render_template, request
@@ -96,14 +93,14 @@ def search_movie_image(query: str) -> str:
     for attempt in range(1, 3):
         try:
             print(f"[Image Search] Attempt {attempt}/2 for: {query}")
-            ddgs = DDGS(proxy=TOR_PROXY, timeout=15, useragent=DEFAULT_USERAGENT)
+            ddgs = DDGS(proxy=TOR_PROXY, timeout=15)
             
             # Search for movie poster
             image_results = ddgs.images(
                 f"{query} movie poster",
                 region="in-en",
                 safesearch="off",
-                max_results=5
+                max_results=10
             )
             
             # Find a good poster image
@@ -125,7 +122,37 @@ def search_movie_image(query: str) -> str:
             
         except Exception as e:
             print(f"[Image Search] Attempt {attempt} failed: {e}")
-    
+
+    # Fallback: try without proxy
+    try:
+        print(f"[Image Search] Trying without proxy for: {query}")
+        ddgs = DDGS(timeout=15)
+        image_results = ddgs.images(
+            f"{query} movie poster",
+            region="in-en",
+            safesearch="off",
+            max_results=10
+        )
+
+        if image_results:
+            for img in image_results:
+                url = img.get("image")
+                if url and url.startswith("http") and any(ext in url.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"]):
+                    image_cache_col.update_one(
+                        {"query": query.lower()},
+                        {"$set": {
+                            "query": query.lower(),
+                            "image_url": url,
+                            "saved_at": datetime.now(timezone.utc)
+                        }},
+                        upsert=True
+                    )
+                    print(f"[Image Search] Found image (no proxy) for: {query}")
+                    return url
+
+    except Exception as e:
+        print(f"[Image Search] Fallback failed: {e}")
+
     print(f"[Image Search] No image found for: {query}")
     return None
 
@@ -404,7 +431,7 @@ def do_search(query: str) -> list:
     for attempt in range(1, 4):
         try:
             print(f"[Search] Attempt {attempt}/3 for: {query}")
-            ddgs = DDGS(proxy=TOR_PROXY, timeout=20, useragent=DEFAULT_USERAGENT)
+            ddgs = DDGS(proxy=TOR_PROXY, timeout=20)
 
             # Search on IMDb
             raw_results = ddgs.text(
