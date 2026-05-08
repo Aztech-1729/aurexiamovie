@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title if title else 'Movie Player' }}</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #player-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+        .error-message {
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+        }
+        /* Anti-ad overlay - catches initial clicks if needed */
+        #ad-shield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            background: transparent;
+            display: none; /* Can be toggled if the iframe itself isn't enough */
+        }
+    </style>
+</head>
+<body>
+    <div id="player-container">
+        {% if embed_url %}
+            <!-- 
+                 Sandbox attributes:
+                 - allow-scripts: Needed for the player to work
+                 - allow-same-origin: Needed for player settings/storage
+                 - allow-presentation: Needed for full-screen
+                 - (OMITTED) allow-popups: BLOCKS AD POPUPS
+                 - (OMITTED) allow-top-navigation: BLOCKS REDIRECTS TO AD SITES
+            -->
+            <iframe 
+                src="{{ embed_url }}" 
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+                allowfullscreen 
+                allow="autoplay; encrypted-media" 
+                scrolling="no">
+            </iframe>
+        {% else %}
+            <div class="error-message">
+                <h1>404 - Video Not Found</h1>
+                <p>Invalid or missing video URL.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Optional: Simple script to prevent unwanted focus loss
+        window.onblur = function() {
+            console.log("Ad attempt blocked (popup/redirect prevented)");
+        };
+    </script>
+</body>
+</html>
